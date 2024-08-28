@@ -1,0 +1,215 @@
+#!/usr/bin/python3
+
+import os
+import sys
+
+# Create dto for crud operations
+from datetime import datetime
+import json
+
+crud_dto = {
+    'name': 'string',
+    'description': 'string',
+    'status': 'string',
+    'created_at': 'datetime',
+    'updated_at': 'datetime',
+}
+
+
+# CRUD operations
+def create(params: crud_dto):
+    # Save the data to local json file. If not exists, create it.
+    task_id = 1
+
+    try:
+        with open('data.json', 'r') as file:
+            data = json.load(file)
+            # Available ID
+            task_id = data[-1]['id'] + 1
+    except FileNotFoundError:
+        data = []
+
+    data_to_save = {
+        'id': task_id,
+        'name': params['name'],
+        'description': params['description'],
+        'status': params['status'],
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'updated_at': None,
+    }
+
+    data.append(data_to_save)
+
+    with open('data.json', 'w') as file:
+        json.dump(data, file)
+
+    # Task added successfully (ID: 1)
+    print(f'Task added successfully (ID: {task_id})')
+
+
+def read_task(task_id: int):
+    # Read the data from local json file
+    with open('data.json', 'r') as file:
+        data = json.load(file)
+        for task in data:
+            if task['id'] == task_id:
+                # Print the task attribute by attribute
+                print(f'ID: {task["id"]}')
+                print(f'Name: {task["name"]}')
+                print(f'Description: {task["description"]}')
+                print(f'Status: {task["status"]}')
+                print(f'Created At: {task["created_at"]}')
+                print(f'Updated At: {task["updated_at"]}')
+                return task
+        print('Task not found')
+
+
+def update(task_id: int, params: crud_dto):
+    return task_id, params
+
+
+def delete(task_id: int):
+    # Read the data from local json file
+    with open('data.json', 'r') as file:
+        data = json.load(file)
+        for task in data:
+            if task['id'] == task_id:
+                data.remove(task)
+                with open('data.json', 'w') as file:
+                    json.dump(data, file)
+                print('Task deleted successfully')
+                return
+        print('Task not found')
+
+
+def list_tasks(options: str = None):
+    if options:
+        if options == 'done':
+            # Read the data from local json file
+            with open('data.json', 'r') as file:
+                data = json.load(file)
+                for task in data:
+                    if task['status'] == 'done':
+                        print('---')
+                        print(f'ID: {task["id"]}')
+                        print(f'Name: {task["name"]}')
+                        print(f'Status: {task["status"]}')
+                        print('---')
+        elif options == 'in-progress':
+            # Read the data from local json file
+            with open('data.json', 'r') as file:
+                data = json.load(file)
+                for task in data:
+                    if task['status'] == 'in-progress':
+                        print('---')
+                        print(f'ID: {task["id"]}')
+                        print(f'Name: {task["name"]}')
+                        print(f'Status: {task["status"]}')
+                        print('---')
+        elif options == 'todo':
+            # Read the data from local json file
+            with open('data.json', 'r') as file:
+                data = json.load(file)
+                for task in data:
+                    if task['status'] == 'todo':
+                        print('---')
+                        print(f'ID: {task["id"]}')
+                        print(f'Name: {task["name"]}')
+                        print(f'Status: {task["status"]}')
+                        print('---')
+        else:
+            print('Invalid option')
+
+        return True
+
+    # Read the data from local json file
+
+    with open('data.json', 'r') as file:
+        data = json.load(file)
+        for task in data:
+            print('---')
+            print(f'ID: {task["id"]}')
+            print(f'Name: {task["name"]}')
+            print(f'Status: {task["status"]}')
+            print('---')
+
+
+def mark_task_as(task_id: int, status: str):
+    # Read the data from local json file
+    with open('data.json', 'r') as file:
+        data = json.load(file)
+        for task in data:
+            if task['id'] == task_id:
+                task['status'] = status
+                with open('data.json', 'w') as f:
+                    json.dump(data, f)
+                print(f'Task marked as {status}')
+                return
+        print('Task not found')
+
+
+# Main function
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: task-cli <action>: add, list, delete, get, mark-in-progress, mark-done")
+        sys.exit(1)
+
+    action = sys.argv[1]
+
+    if action == "add":
+        if len(sys.argv) < 3:
+            print("Usage: task-cli add <task_name>")
+            sys.exit(1)
+        task_name = sys.argv[2]
+        task_description = sys.argv[3] if len(sys.argv) > 3 else ""
+        create({
+            "name": task_name,
+            "description": task_description,
+            "status": "todo"
+        })
+    elif action == "list":
+        if len(sys.argv) > 2:
+            if sys.argv[2] == "done":
+                list_tasks("done")
+                sys.exit(0)
+            elif sys.argv[2] == "in-progress":
+                list_tasks("in-progress")
+                sys.exit(0)
+            elif sys.argv[2] == "todo":
+                list_tasks("todo")
+                sys.exit(0)
+            else:
+                print("Invalid action: try > task list <done, in-progress, todo> or > task list")
+                sys.exit(1)
+        list_tasks()
+    elif action == "delete":
+        if len(sys.argv) < 3:
+            print("Usage: task-cli remove <id>")
+            sys.exit(1)
+        task = sys.argv[2]
+        delete(int(task))
+    elif action == "get":
+        if len(sys.argv) < 3:
+            print("Usage: task-cli get <id>")
+            sys.exit(1)
+        task = sys.argv[2]
+        read_task(int(task))
+    elif action == "mark-in-progress":
+        if len(sys.argv) < 3:
+            print("Usage: task-cli mark-in-progress <id>")
+            sys.exit(1)
+        task = sys.argv[2]
+        mark_task_as(int(task), "in-progress")
+    elif action == "mark-done":
+        if len(sys.argv) < 3:
+            print("Usage: task-cli mark-done <id>")
+            sys.exit(1)
+        task = sys.argv[2]
+        mark_task_as(int(task), "done")
+    else:
+        print("Invalid action")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
